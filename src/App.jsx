@@ -20,9 +20,9 @@ const firebaseConfig = {
   measurementId: "G-NX2RT69736"
 };
 
-// 2. 如果您需要使用“AI智能更新日程”功能，请在此处填入 Google Gemini API Key
-// 申请地址：https://aistudio.google.com/app/apikey
-const GEMINI_API_KEY = "AIzaSyDivtTCHNg8GqZZYulMINE1kK5XFFKVyCE";
+// 2. 如果您需要使用“AI智能更新日程”功能，请在 Vercel 环境变量中填入 DEEPSEEK_API_KEY
+// 请先注册 DeepSeek 并获取 API Key：https://platform.deepseek.com/
+const DEEPSEEK_API_KEY = "在这里填入您的 API Key (仅用于本地调试)"; 
 
 // ==========================================
 
@@ -169,77 +169,56 @@ export default function App() {
   };
 
   const handleUpdateDates = async () => {
-    if (!GEMINI_API_KEY || GEMINI_API_KEY.includes("填入您的")) {
-      alert("请先在代码中配置您的 Gemini API Key 才能使用联网功能");
-      return;
-    }
-
     setIsUpdatingDates(true);
     setUpdateError(false);
 
     try {
-      const promptText = `现在是2026年。请使用Google搜索查询以下国际乳腺癌学术会议的最新召开时间和地点：
+      const promptText = `现在是2026年。请以专家身份搜索并核实以下乳腺癌会议的最新召开时间和地点：
       ${conferences.map(c => c.shortName).join(', ')}。
-      如果尚未官宣，请根据往年规律预估并标注“(预计)”。请严格以JSON格式返回数据，包含一个名为 "conferences" 的对象数组。`;
+      如果尚未官宣，请根据惯例预估并标注“(预计)”。请严格按照 JSON 格式返回，包含一个名为 "conferences" 的数组。`;
 
       const payload = {
-        contents: [{ parts: [{ text: promptText }] }],
-        tools: [{ google_search: {} }],
-        generationConfig: {
-          responseMimeType: "application/json",
-          responseSchema: {
-            type: "OBJECT",
-            properties: {
-              conferences: {
-                type: "ARRAY",
-                items: {
-                  type: "OBJECT",
-                  properties: {
-                    shortName: { type: "STRING" },
-                    date: { type: "STRING" },
-                    location: { type: "STRING" }
-                  },
-                  required: ["shortName", "date", "location"]
-                }
-              }
-            },
-            required: ["conferences"]
-          }
-        }
+        messages: [{ role: "user", content: promptText }]
       };
 
       let response;
       let attempt = 0;
-      const delays = [1000, 2000, 4000, 8000, 16000];
+      const delays = [1000, 2000, 4000];
 
-      while (attempt < 5) {
+      while (attempt < 3) {
         try {
-          // 在 Vercel 生产环境中通过 API Proxy 调用，绕过本地网络限制
-          const apiUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-            ? `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`
-            : `/api/gemini`;
+          // 本地开发模式下尝试直连 DeepSeek (如果网络允许)，线上通过 Vercel Proxy
+          const isLocal = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1';
+          const apiUrl = isLocal 
+            ? `https://api.deepseek.com/chat/completions` 
+            : `/api/ai`;
 
           response = await fetch(apiUrl, {
-            method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
+            method: 'POST', 
+            headers: { 
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
+            }, 
+            body: JSON.stringify(isLocal ? { ...payload, model: "deepseek-chat", response_format: { type: 'json_object' } } : payload)
           });
           if (response.ok) break;
         } catch (e) {
           console.error(`Attempt ${attempt + 1} failed:`, e);
         }
-        if (attempt < 4) await new Promise(r => setTimeout(r, delays[attempt]));
+        if (attempt < 2) await new Promise(r => setTimeout(r, delays[attempt]));
         attempt++;
       }
 
       if (!response || !response.ok) {
         setUpdateError(true);
-        throw new Error("API 请求超时或被阻断");
+        throw new Error("AI 服务请求失败，请检查网络或配置");
       }
 
       const data = await response.json();
-      const jsonText = data.candidates?.[0]?.content?.parts?.[0]?.text;
+      const content = data.choices?.[0]?.message?.content;
 
-      if (jsonText) {
-        const parsedData = JSON.parse(jsonText);
+      if (content) {
+        const parsedData = JSON.parse(content);
         const updates = parsedData.conferences || [];
         setConferences(prev => prev.map(conf => {
           const update = updates.find(u => u.shortName === conf.shortName);
