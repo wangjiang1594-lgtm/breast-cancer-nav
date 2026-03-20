@@ -214,7 +214,12 @@ export default function App() {
 
       while (attempt < 5) {
         try {
-          response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`, {
+          // 在 Vercel 生产环境中通过 API Proxy 调用，绕过本地网络限制
+          const apiUrl = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
+            ? `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${GEMINI_API_KEY}`
+            : `/api/gemini`;
+
+          response = await fetch(apiUrl, {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
           });
           if (response.ok) break;
