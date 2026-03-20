@@ -22,7 +22,7 @@ const firebaseConfig = {
 
 // 2. 如果您需要使用“AI智能更新日程”功能，请在此处填入 Google Gemini API Key
 // 申请地址：https://aistudio.google.com/app/apikey
-const GEMINI_API_KEY = "在这里填入您的Gemini_API_KEY"; 
+const GEMINI_API_KEY = "AIzaSyDivtTCHNg8GqZZYulMINE1kK5XFFKVyCE";
 
 // ==========================================
 
@@ -96,7 +96,7 @@ export default function App() {
   const [user, setUser] = useState(null);
   const [materials, setMaterials] = useState({});
   const [updateError, setUpdateError] = useState(false);
-  
+
   const [editingConf, setEditingConf] = useState(null);
   const [tempNotes, setTempNotes] = useState('');
   const [tempLinks, setTempLinks] = useState([]);
@@ -164,7 +164,7 @@ export default function App() {
       const docRef = doc(db, 'users', user.uid, 'conference_materials', editingConf.id);
       await setDoc(docRef, { notes: tempNotes, links: tempLinks, updatedAt: new Date().toISOString() }, { merge: true });
       closeSheet();
-    } catch (error) { console.error("Error saving materials:", error); } 
+    } catch (error) { console.error("Error saving materials:", error); }
     finally { setIsSaving(false); }
   };
 
@@ -173,7 +173,7 @@ export default function App() {
       alert("请先在代码中配置您的 Gemini API Key 才能使用联网功能");
       return;
     }
-    
+
     setIsUpdatingDates(true);
     setUpdateError(false);
 
@@ -188,15 +188,15 @@ export default function App() {
         generationConfig: {
           responseMimeType: "application/json",
           responseSchema: {
-            type: "OBJECT", 
+            type: "OBJECT",
             properties: {
               conferences: {
                 type: "ARRAY",
                 items: {
                   type: "OBJECT",
                   properties: {
-                    shortName: { type: "STRING" }, 
-                    date: { type: "STRING" }, 
+                    shortName: { type: "STRING" },
+                    date: { type: "STRING" },
                     location: { type: "STRING" }
                   },
                   required: ["shortName", "date", "location"]
@@ -211,15 +211,15 @@ export default function App() {
       let response;
       let attempt = 0;
       const delays = [1000, 2000, 4000, 8000, 16000];
-      
+
       while (attempt < 5) {
         try {
           response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-preview-09-2025:generateContent?key=${GEMINI_API_KEY}`, {
             method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload)
           });
           if (response.ok) break;
-        } catch (e) { 
-          console.error(`Attempt ${attempt + 1} failed:`, e); 
+        } catch (e) {
+          console.error(`Attempt ${attempt + 1} failed:`, e);
         }
         if (attempt < 4) await new Promise(r => setTimeout(r, delays[attempt]));
         attempt++;
@@ -232,7 +232,7 @@ export default function App() {
 
       const data = await response.json();
       const jsonText = data.candidates?.[0]?.content?.parts?.[0]?.text;
-      
+
       if (jsonText) {
         const parsedData = JSON.parse(jsonText);
         const updates = parsedData.conferences || [];
@@ -257,7 +257,7 @@ export default function App() {
     if (tempLinks && tempLinks.length > 0) {
       tempLinks.forEach(link => { markdownContent += `- [${link.title}](${link.url})\n`; });
     } else { markdownContent += '*暂无外部链接*\n'; }
-    
+
     if (copyTextAreaRef.current) {
       copyTextAreaRef.current.value = markdownContent;
       copyTextAreaRef.current.select();
@@ -273,15 +273,15 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 font-sans text-slate-800 mx-auto max-w-lg shadow-xl relative pb-8">
-      
+
       <div className="sticky top-0 z-20 bg-white/95 backdrop-blur-md border-b border-slate-100 px-4 py-3 flex items-center justify-between shadow-sm">
         <div className="flex items-center gap-2">
           <div className="bg-rose-100 p-1.5 rounded-lg"><Activity className="w-5 h-5 text-rose-600" /></div>
           <h1 className="text-lg font-bold text-slate-900 tracking-tight">乳腺癌会议导航</h1>
         </div>
-        
-        <button 
-          onClick={handleUpdateDates} 
+
+        <button
+          onClick={handleUpdateDates}
           disabled={isUpdatingDates}
           className="flex items-center gap-1.5 px-3 py-1.5 bg-indigo-50 text-indigo-600 rounded-full hover:bg-indigo-100 transition-colors text-sm font-medium"
           title="AI 联网智能更新日程"
@@ -313,7 +313,7 @@ export default function App() {
           return (
             <div key={conf.id} className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
               <div className={`h-1 w-full ${conf.status === 'upcoming' ? 'bg-gradient-to-r from-rose-400 to-orange-400' : 'bg-slate-300'}`} />
-              
+
               <div className="p-4">
                 <div className="flex justify-between items-start mb-3">
                   <div className="pr-2">
@@ -370,7 +370,7 @@ export default function App() {
         <div className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-slate-900/40 backdrop-blur-sm transition-opacity" onClick={closeSheet}>
           <div className="bg-white w-full sm:max-w-md h-[85vh] sm:h-auto sm:max-h-[85vh] rounded-t-3xl sm:rounded-2xl shadow-2xl flex flex-col animate-in slide-in-from-bottom duration-300" onClick={(e) => e.stopPropagation()}>
             <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mt-3 mb-1 sm:hidden" />
-            
+
             <div className="flex items-center justify-between px-5 pt-3 pb-4 border-b border-slate-100">
               <div>
                 <h3 className="text-lg font-bold text-slate-800">{editingConf.shortName}</h3>
@@ -384,10 +384,10 @@ export default function App() {
                 <label className="flex items-center text-sm font-bold text-slate-700 mb-2">
                   <FileText className="w-4 h-4 mr-2 text-indigo-500" />重点笔记
                 </label>
-                <textarea 
-                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all min-h-[100px] resize-y" 
-                  placeholder="记录临床感悟或科室讨论..." 
-                  value={tempNotes} onChange={(e) => setTempNotes(e.target.value)} 
+                <textarea
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:bg-white focus:ring-2 focus:ring-indigo-500 outline-none transition-all min-h-[100px] resize-y"
+                  placeholder="记录临床感悟或科室讨论..."
+                  value={tempNotes} onChange={(e) => setTempNotes(e.target.value)}
                 />
               </div>
 
@@ -395,7 +395,7 @@ export default function App() {
                 <label className="flex items-center text-sm font-bold text-slate-700 mb-2">
                   <LinkIcon className="w-4 h-4 mr-2 text-emerald-500" />网盘/文献链接
                 </label>
-                
+
                 {tempLinks.length > 0 && (
                   <ul className="mb-4 space-y-2">
                     {tempLinks.map((link, idx) => (
@@ -408,7 +408,7 @@ export default function App() {
                     ))}
                   </ul>
                 )}
-                
+
                 <div className="space-y-2 bg-slate-50 p-3 rounded-xl border border-slate-100">
                   <input type="text" placeholder="标题 (如: SABCS 解读PPT)" className="w-full p-3 bg-white border border-slate-200 rounded-lg text-sm focus:ring-2 focus:ring-emerald-500 outline-none" value={newLinkTitle} onChange={(e) => setNewLinkTitle(e.target.value)} />
                   <div className="flex gap-2">
@@ -423,7 +423,7 @@ export default function App() {
               <button onClick={handleSaveMaterials} disabled={isSaving} className="w-full py-3.5 text-sm font-bold text-white bg-indigo-600 active:bg-indigo-700 rounded-xl shadow-sm transition-all flex items-center justify-center disabled:opacity-70">
                 {isSaving ? <><Activity className="w-5 h-5 mr-2 animate-spin" /> 保存中...</> : <><Save className="w-5 h-5 mr-2" /> 保存至云端</>}
               </button>
-              
+
               <button onClick={handleCopyToObsidian} className={`w-full py-3.5 text-sm font-bold rounded-xl flex items-center justify-center border transition-all ${copiedSuccess ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-white text-slate-700 border-slate-200 active:bg-slate-50'}`}>
                 {copiedSuccess ? <><Check className="w-5 h-5 mr-2" /> 已复制至剪贴板</> : <><Copy className="w-5 h-5 mr-2 text-indigo-500" /> 导出到 Obsidian (MD)</>}
               </button>
