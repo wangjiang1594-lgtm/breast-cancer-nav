@@ -95,7 +95,7 @@ export default function App() {
   const [isUpdatingDates, setIsUpdatingDates] = useState(false);
   const [user, setUser] = useState(null);
   const [materials, setMaterials] = useState({});
-  const [updateError, setUpdateError] = useState(false);
+  const [updateError, setUpdateError] = useState(null); // 修改为存储错误信息字符串
 
   const [editingConf, setEditingConf] = useState(null);
   const [tempNotes, setTempNotes] = useState('');
@@ -170,7 +170,7 @@ export default function App() {
 
   const handleUpdateDates = async () => {
     setIsUpdatingDates(true);
-    setUpdateError(false);
+    setUpdateError(null);
 
     try {
       const promptText = `现在是2026年。请以专家身份搜索并核实以下乳腺癌会议的最新召开时间和地点：
@@ -210,9 +210,10 @@ export default function App() {
       }
 
       if (!response || !response.ok) {
-        setUpdateError(true);
-        const errorDetail = response ? ` (状态码: ${response.status})` : "";
-        throw new Error(`AI 服务请求失败${errorDetail}，请检查网络或配置`);
+        const status = response ? response.status : "Network Error";
+        const msg = `AI 服务请求失败 (状态码: ${status})。请检查 Vercel 环境变量 (DEEPSEEK_API_KEY) 是否已设置。`;
+        setUpdateError(msg);
+        throw new Error(msg);
       }
 
       const data = await response.json();
@@ -235,7 +236,7 @@ export default function App() {
       }
     } catch (error) {
       console.error("更新会议信息时出错:", error);
-      setUpdateError(true);
+      if (!updateError) setUpdateError(error.message || "未知错误");
     } finally {
       setIsUpdatingDates(false);
     }
@@ -286,9 +287,9 @@ export default function App() {
         <div className="bg-red-50 text-red-600 text-xs px-4 py-2 flex items-center justify-between">
           <div className="flex flex-col">
             <span className="font-bold">AI 更新失败</span>
-            <span>请检查 Vercel 环境变量 (DEEPSEEK_API_KEY) 是否已设置并重新部署。调试信息可通过 Vercel Logs 查看。</span>
+            <span>{updateError}</span>
           </div>
-          <button onClick={() => setUpdateError(false)}><X className="w-3 h-3" /></button>
+          <button onClick={() => setUpdateError(null)}><X className="w-3 h-3" /></button>
         </div>
       )}
 
