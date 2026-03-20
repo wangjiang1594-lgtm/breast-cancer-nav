@@ -277,7 +277,7 @@ export default function App() {
 
       {updateError && (
         <div className="bg-red-50 text-red-600 text-xs px-4 py-2 flex items-center justify-between">
-          <span>AI 更新失败，网络受限，请使用卡片快捷检索</span>
+          <span>AI 更新失败，请检查配置（Vercel 环境变量）或稍后再试</span>
           <button onClick={() => setUpdateError(false)}><X className="w-3 h-3" /></button>
         </div>
       )}
