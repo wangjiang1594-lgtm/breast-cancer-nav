@@ -236,7 +236,11 @@ export default function App() {
       }
     } catch (error) {
       console.error("更新会议信息时出错:", error);
-      if (!updateError) setUpdateError(error.message || "未知错误");
+      let errorMsg = error.message || "未知错误";
+      if (errorMsg === "Failed to fetch") {
+        errorMsg = "网络请求被拦截 (Failed to fetch)。这通常是由于 VPN 未开启（本地测试）或 域名解析/SSL 问题（线上测试）导致。";
+      }
+      if (!updateError) setUpdateError(errorMsg);
     } finally {
       setIsUpdatingDates(false);
     }
