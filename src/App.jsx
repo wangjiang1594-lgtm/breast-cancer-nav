@@ -211,7 +211,8 @@ export default function App() {
 
       if (!response || !response.ok) {
         setUpdateError(true);
-        throw new Error("AI 服务请求失败，请检查网络或配置");
+        const errorDetail = response ? ` (状态码: ${response.status})` : "";
+        throw new Error(`AI 服务请求失败${errorDetail}，请检查网络或配置`);
       }
 
       const data = await response.json();
@@ -277,7 +278,10 @@ export default function App() {
 
       {updateError && (
         <div className="bg-red-50 text-red-600 text-xs px-4 py-2 flex items-center justify-between">
-          <span>AI 更新失败，请检查配置（Vercel 环境变量）或稍后再试</span>
+          <div className="flex flex-col">
+            <span className="font-bold">AI 更新失败</span>
+            <span>请检查 Vercel 环境变量 (DEEPSEEK_API_KEY) 是否已设置并重新部署。调试信息可通过 Vercel Logs 查看。</span>
+          </div>
           <button onClick={() => setUpdateError(false)}><X className="w-3 h-3" /></button>
         </div>
       )}
