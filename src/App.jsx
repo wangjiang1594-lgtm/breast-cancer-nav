@@ -22,7 +22,7 @@ const firebaseConfig = {
 
 // 2. 如果您需要使用“AI智能更新日程”功能，请在 Vercel 环境变量中填入 DEEPSEEK_API_KEY
 // 请先注册 DeepSeek 并获取 API Key：https://platform.deepseek.com/
-const DEEPSEEK_API_KEY = "在这里填入您的 API Key (仅用于本地调试)"; 
+const DEEPSEEK_API_KEY = "sk-d62a147c577d4f46a0d12de8cf43e46e"; 
 
 // ==========================================
 
@@ -221,11 +221,17 @@ export default function App() {
       if (content) {
         const parsedData = JSON.parse(content);
         const updates = parsedData.conferences || [];
+        let updatedCount = 0;
         setConferences(prev => prev.map(conf => {
           const update = updates.find(u => u.shortName === conf.shortName);
-          if (update) return { ...conf, date: update.date, location: update.location };
+          if (update && (update.date !== conf.date || update.location !== conf.location)) {
+            updatedCount++;
+            return { ...conf, date: update.date, location: update.location };
+          }
           return conf;
         }));
+        
+        alert(`智能更新完成！共更新了 ${updatedCount} 场会议的日程信息。`);
       }
     } catch (error) {
       console.error("更新会议信息时出错:", error);
