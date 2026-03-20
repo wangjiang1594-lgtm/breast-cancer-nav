@@ -193,12 +193,14 @@ export default function App() {
             ? `https://api.deepseek.com/chat/completions` 
             : `/api/ai`;
 
+          const headers = { 'Content-Type': 'application/json' };
+          if (isLocal) {
+            headers['Authorization'] = `Bearer ${DEEPSEEK_API_KEY}`;
+          }
+
           response = await fetch(apiUrl, {
             method: 'POST', 
-            headers: { 
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${DEEPSEEK_API_KEY}`
-            }, 
+            headers: headers, 
             body: JSON.stringify(isLocal ? { ...payload, model: "deepseek-chat", response_format: { type: 'json_object' } } : payload)
           });
           if (response.ok) break;
