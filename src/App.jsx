@@ -22,7 +22,7 @@ const firebaseConfig = {
 
 // 2. 如果您需要使用“AI智能更新日程”功能，请在 Vercel 环境变量中填入 DEEPSEEK_API_KEY
 // 请先注册 DeepSeek 并获取 API Key：https://platform.deepseek.com/
-const DEEPSEEK_API_KEY = "sk-d62a147c577d4f46a0d12de8cf43e46e"; 
+const DEEPSEEK_API_KEY = "在这里填入您的 API Key (仅用于本地调试)"; 
 
 // ==========================================
 
