@@ -27,7 +27,7 @@ const DEEPSEEK_API_KEY = "在这里填入您的 API Key (仅用于本地调试)"
 // ==========================================
 
 const app = initializeApp(firebaseConfig);
-const analytics = typeof window !== 'undefined' ? getAnalytics(app) : null;
+if (typeof window !== 'undefined') { getAnalytics(app); }
 const auth = getAuth(app);
 const db = getFirestore(app);
 
@@ -70,6 +70,18 @@ const conferenceData = [
     description: '发布了多项新型内分泌治疗及下一代 ADC 药物在晚期乳腺癌中的突破性数据。'
   },
   {
+    id: 'asco-2025', shortName: 'ASCO 2025', fullName: '2025年美国临床肿瘤学会年会',
+    date: '2025-05-30 至 06-03', location: '美国, 芝加哥', url: 'https://conferences.asco.org/am/attendance',
+    status: 'past', year: 2025, tags: ['综合性', '临床突破', '新药发布'],
+    description: '2025年全球最受瞩目的肿瘤学盛会，涵盖了乳腺癌领域多项重磅 III 期临床结果。'
+  },
+  {
+    id: 'esmo-2025', shortName: 'ESMO 2025', fullName: '2025年欧洲肿瘤内科学会年会',
+    date: '2025-10-17 至 10-21', location: '德国, 柏林', url: 'https://www.esmo.org/meeting-calendar/esmo-congress-2025',
+    status: 'past', year: 2025, tags: ['欧洲指南', '免疫治疗', '晚期乳腺癌'],
+    description: '欧洲最高规格的肿瘤学会议，重点关注了免疫疗法在乳腺癌中的进一步应用及指南更新。'
+  },
+  {
     id: 'esmo-breast-2025', shortName: 'ESMO Breast 2025', fullName: '2025 ESMO 乳腺癌大会',
     date: '2025-05-14 至 05-17', location: '德国, 慕尼黑', url: 'https://www.esmo.org/meeting-calendar/esmo-breast-cancer-2025',
     status: 'past', year: 2025, tags: ['ctDNA', '年轻乳腺癌', '免疫治疗'],
@@ -86,6 +98,24 @@ const conferenceData = [
     date: '2024-12-10 至 12-13', location: '美国, 圣安东尼奥', url: 'https://breastcancer.knowledgehub.wiley.com/sabcs-2024/',
     status: 'past', year: 2024, tags: ['历史经典', '新型靶点'],
     description: '确立了多款新药在特定分型乳腺癌（如 HER2 低表达）中的标准治疗地位。'
+  },
+  {
+    id: 'asco-2024', shortName: 'ASCO 2024', fullName: '2024年美国临床肿瘤学会年会',
+    date: '2024-05-31 至 06-04', location: '美国, 芝加哥', url: 'https://conferences.asco.org/am/2024-asco-annual-meeting',
+    status: 'past', year: 2024, tags: ['ADC革命', '精准医疗'],
+    description: '2024年见证了 ADC 药物在乳腺癌领域的全面爆发，多项研究改变了临床治疗格局。'
+  },
+  {
+    id: 'esmo-2024', shortName: 'ESMO 2024', fullName: '2024年欧洲肿瘤内科学会年会',
+    date: '2024-09-13 至 09-17', location: '西班牙, 巴塞罗那', url: 'https://www.esmo.org/meeting-calendar/esmo-congress-2024',
+    status: 'past', year: 2024, tags: ['LBA重磅', '早期乳腺癌'],
+    description: '发布了多项关于早期乳腺癌强化治疗及晚期乳腺癌耐药处理的关键数据。'
+  },
+  {
+    id: 'esmo-breast-2024', shortName: 'ESMO Breast 2024', fullName: '2024年 ESMO 乳腺癌大会',
+    date: '2024-05-15 至 05-17', location: '德国, 柏林', url: 'https://www.esmo.org/meeting-calendar/esmo-breast-cancer-2024',
+    status: 'past', year: 2024, tags: ['转化研究', '年轻乳腺癌'],
+    description: '专门针对乳腺癌的学术会议，深入探讨了基础研究向临床转化的最新进展。'
   }
 ];
 

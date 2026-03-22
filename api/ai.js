@@ -1,3 +1,4 @@
+/* global process */
 export default async function handler(req, res) {
   // 允许 CORS
   res.setHeader('Access-Control-Allow-Origin', '*');
