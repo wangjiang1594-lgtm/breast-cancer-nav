@@ -336,16 +336,18 @@ export default function App() {
     if (!searchConf) return;
     const { keyword, account, timeRange, sort } = searchFilters;
     
-    // 构建更标准的搜狗微信搜索 URL，确保参数生效
-    // s_from=input 是关键，告知服务器这是从搜索框发起的请求
-    let url = `https://weixin.sogou.com/weixin?type=2&s_from=input&query=${encodeURIComponent(keyword)}&ie=utf8&_sug_=n&_sug_type_=`;
-    
-    // 如果指定了公众号，使用 usip 参数
+    // 核心优化：移动端搜狗往往会屏蔽 URL 参数中的高级筛选 (tsn, sort, usip)，
+    // 最稳健的办法是将“公众号名称”直接并入“关键词”中进行全局搜索。
+    let finalQuery = keyword;
     if (account.trim()) {
-      url += `&usip=${encodeURIComponent(account.trim())}`;
+      finalQuery += ` ${account.trim()}`;
     }
     
-    // 时间范围 (tsn) 和 排序 (sort)
+    // 构建基础搜索 URL，加入必要的 s_from 参数以模拟真实搜索
+    let url = `https://weixin.sogou.com/weixin?type=2&s_from=input&query=${encodeURIComponent(finalQuery)}&ie=utf8&_sug_=n&_sug_type_=`;
+    
+    // 仍然尝试带上高级参数，以便在支持的环境（如桌面端或特定版本）中生效
+    if (account.trim()) url += `&usip=${encodeURIComponent(account.trim())}`;
     if (timeRange !== '0') url += `&tsn=${timeRange}`;
     if (sort !== '0') url += `&sort=${sort}`;
     
@@ -601,9 +603,10 @@ export default function App() {
 
               <div className="bg-amber-50 rounded-xl p-3 flex gap-3 text-amber-800 border border-amber-100">
                 <Filter className="w-5 h-5 shrink-0 mt-0.5 opacity-60" />
-                <p className="text-[11px] leading-relaxed">
-                  <strong>提示:</strong> 搜索结果将在搜狗微信中打开。如果您正在使用微信客户端，点击文章即可直接在公众号内阅读。
-                </p>
+                <div className="text-[11px] leading-relaxed">
+                  <p><strong>注：</strong> 由于搜狗平台限制，外部链接可能无法直接触发“时间排序”。如未生效，请在搜狗结果页手动点选即可。</p>
+                  <p className="mt-1 opacity-80">小技巧：若需指定公众号，我们将名称并入关键词搜索，效果最稳健。</p>
+                </div>
               </div>
             </div>
 
