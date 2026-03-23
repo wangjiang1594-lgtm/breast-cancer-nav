@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Calendar, MapPin, ExternalLink, Activity, Award, BookOpen, FolderHeart, Plus, X, Save, Link as LinkIcon, FileText, Copy, Check, RefreshCw, Sparkles, Search, ChevronRight } from 'lucide-react';
+import { Calendar, MapPin, ExternalLink, Activity, Award, BookOpen, FolderHeart, Plus, X, Save, Link as LinkIcon, FileText, Copy, Check, RefreshCw, Sparkles, Search, ChevronRight, MessageSquare, Filter } from 'lucide-react';
 import { initializeApp } from 'firebase/app';
 import { getAuth, signInAnonymously, onAuthStateChanged } from 'firebase/auth';
 import { getFirestore, collection, doc, setDoc, onSnapshot } from 'firebase/firestore';
@@ -125,7 +125,7 @@ export default function App() {
   const [isUpdatingDates, setIsUpdatingDates] = useState(false);
   const [user, setUser] = useState(null);
   const [materials, setMaterials] = useState({});
-  const [updateError, setUpdateError] = useState(null); // 修改为存储错误信息字符串
+  const [updateError, setUpdateError] = useState(null);
 
   const [editingConf, setEditingConf] = useState(null);
   const [tempNotes, setTempNotes] = useState('');
@@ -135,6 +135,29 @@ export default function App() {
   const [isSaving, setIsSaving] = useState(false);
   const [copiedSuccess, setCopiedSuccess] = useState(false);
   const copyTextAreaRef = useRef(null);
+
+  // 微信搜索相关状态
+  const [isSearchDrawerOpen, setIsSearchDrawerOpen] = useState(false);
+  const [searchConf, setSearchConf] = useState(null);
+  const [searchFilters, setSearchFilters] = useState({
+    keyword: '',
+    account: '',
+    timeRange: '0', // 0:全部, 1:一天内, 2:一周内, 3:一月内, 4:一年内
+    sort: '0'      // 0:相关性, 1:时间排序
+  });
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    const checkMobile = () => {
+      const ua = navigator.userAgent.toLowerCase();
+      const isMobileDevice = /iphone|ipad|ipod|android|blackberry|iemobile|opera mini/i.test(ua);
+      const isWeChat = /micromessenger/i.test(ua);
+      setIsMobile(isMobileDevice || isWeChat || window.innerWidth < 768);
+    };
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
 
   useEffect(() => {
     // 真实部署环境使用匿名登录
@@ -297,6 +320,30 @@ export default function App() {
     }
   };
 
+  const handleOpenSearch = (conf) => {
+    setSearchConf(conf);
+    setSearchFilters({ ...searchFilters, keyword: conf.shortName });
+    setIsSearchDrawerOpen(true);
+    document.body.style.overflow = 'hidden';
+  };
+
+  const closeSearchDrawer = () => {
+    setIsSearchDrawerOpen(false);
+    document.body.style.overflow = 'auto';
+  };
+
+  const executeSearch = () => {
+    if (!searchConf) return;
+    const { keyword, account, timeRange, sort } = searchFilters;
+    let url = `https://weixin.sogou.com/weixin?type=2&query=${encodeURIComponent(keyword)}`;
+    if (account.trim()) url += `&usip=${encodeURIComponent(account.trim())}`;
+    if (timeRange !== '0') url += `&tsn=${timeRange}`;
+    if (sort !== '0') url += `&sort=${sort}`;
+    
+    window.open(url, '_blank');
+    closeSearchDrawer();
+  };
+
   const filteredData = conferences.filter(conf => conf.status === activeTab);
 
   return (
@@ -377,7 +424,16 @@ export default function App() {
                   </span>
                   <a href={`https://cn.bing.com/search?q=${encodeURIComponent(conf.shortName + ' dates location official')}`} target="_blank" rel="noopener noreferrer" className="shrink-0 text-[10px] font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 px-2.5 py-1 rounded-full">Bing</a>
                   <a href={`https://www.baidu.com/s?wd=${encodeURIComponent(conf.shortName + ' 会议 时间 地点')}`} target="_blank" rel="noopener noreferrer" className="shrink-0 text-[10px] font-medium text-slate-600 bg-white border border-slate-200 hover:bg-slate-50 px-2.5 py-1 rounded-full">Baidu</a>
-                  <a href={`https://weixin.sogou.com/weixin?type=2&query=${encodeURIComponent(conf.shortName)}`} target="_blank" rel="noopener noreferrer" className="shrink-0 text-[10px] font-medium text-emerald-600 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 px-2.5 py-1 rounded-full">微信文章</a>
+                  {isMobile ? (
+                    <button 
+                      onClick={() => handleOpenSearch(conf)}
+                      className="shrink-0 text-[10px] font-medium text-emerald-600 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 px-2.5 py-1 rounded-full"
+                    >
+                      微信文章
+                    </button>
+                  ) : (
+                    <a href={`https://weixin.sogou.com/weixin?type=2&query=${encodeURIComponent(conf.shortName)}`} target="_blank" rel="noopener noreferrer" className="shrink-0 text-[10px] font-medium text-emerald-600 bg-emerald-50 border border-emerald-200 hover:bg-emerald-100 px-2.5 py-1 rounded-full">微信文章</a>
+                  )}
                 </div>
 
                 <div className="flex gap-2 mt-1">
@@ -457,6 +513,93 @@ export default function App() {
 
               <button onClick={handleCopyToObsidian} className={`w-full py-3.5 text-sm font-bold rounded-xl flex items-center justify-center border transition-all ${copiedSuccess ? 'bg-emerald-50 text-emerald-600 border-emerald-200' : 'bg-white text-slate-700 border-slate-200 active:bg-slate-50'}`}>
                 {copiedSuccess ? <><Check className="w-5 h-5 mr-2" /> 已复制至剪贴板</> : <><Copy className="w-5 h-5 mr-2 text-indigo-500" /> 导出到 Obsidian (MD)</>}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {isSearchDrawerOpen && searchConf && (
+        <div className="fixed inset-0 z-50 flex items-end justify-center bg-slate-900/40 backdrop-blur-sm transition-opacity" onClick={closeSearchDrawer}>
+          <div className="bg-white w-full max-w-md rounded-t-3xl shadow-2xl flex flex-col animate-in slide-in-from-bottom duration-300" onClick={(e) => e.stopPropagation()}>
+            <div className="w-12 h-1.5 bg-slate-200 rounded-full mx-auto mt-3 mb-1" />
+            
+            <div className="flex items-center justify-between px-5 pt-3 pb-4 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <div className="bg-emerald-100 p-1.5 rounded-lg"><MessageSquare className="w-5 h-5 text-emerald-600" /></div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-800">微信文章搜索</h3>
+                  <p className="text-[10px] text-slate-500">精准查找会议解读与报道</p>
+                </div>
+              </div>
+              <button onClick={closeSearchDrawer} className="p-2 bg-slate-100 text-slate-500 rounded-full"><X className="w-5 h-5" /></button>
+            </div>
+
+            <div className="p-5 space-y-5 overflow-y-auto max-h-[70vh]">
+              <div>
+                <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">搜索关键词</label>
+                <input 
+                  type="text" 
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                  value={searchFilters.keyword}
+                  onChange={(e) => setSearchFilters({...searchFilters, keyword: e.target.value})}
+                  placeholder="如: ASCO 2024 乳腺癌"
+                />
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">指定公众号 (可选)</label>
+                <input 
+                  type="text" 
+                  className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none"
+                  value={searchFilters.account}
+                  onChange={(e) => setSearchFilters({...searchFilters, account: e.target.value})}
+                  placeholder="如: 肿瘤评论, 丁香园"
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">时间范围</label>
+                  <select 
+                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none appearance-none"
+                    value={searchFilters.timeRange}
+                    onChange={(e) => setSearchFilters({...searchFilters, timeRange: e.target.value})}
+                  >
+                    <option value="0">全部时间</option>
+                    <option value="1">一天内</option>
+                    <option value="2">一周内</option>
+                    <option value="3">一月内</option>
+                    <option value="4">一年内</option>
+                  </select>
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">排序方式</label>
+                  <select 
+                    className="w-full p-3 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:ring-2 focus:ring-emerald-500 outline-none appearance-none"
+                    value={searchFilters.sort}
+                    onChange={(e) => setSearchFilters({...searchFilters, sort: e.target.value})}
+                  >
+                    <option value="0">相关性优先</option>
+                    <option value="1">最新发布优先</option>
+                  </select>
+                </div>
+              </div>
+
+              <div className="bg-amber-50 rounded-xl p-3 flex gap-3 text-amber-800 border border-amber-100">
+                <Filter className="w-5 h-5 shrink-0 mt-0.5 opacity-60" />
+                <p className="text-[11px] leading-relaxed">
+                  <strong>提示:</strong> 搜索结果将在搜狗微信中打开。如果您正在使用微信客户端，点击文章即可直接在公众号内阅读。
+                </p>
+              </div>
+            </div>
+
+            <div className="p-4 border-t border-slate-100 bg-white pb-8">
+              <button 
+                onClick={executeSearch}
+                className="w-full py-4 bg-emerald-600 text-white font-bold rounded-2xl shadow-lg shadow-emerald-200 active:bg-emerald-700 transition-all flex items-center justify-center gap-2"
+              >
+                <Search className="w-5 h-5" />
+                立即搜索
               </button>
             </div>
           </div>
