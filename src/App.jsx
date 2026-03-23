@@ -335,12 +335,26 @@ export default function App() {
   const executeSearch = () => {
     if (!searchConf) return;
     const { keyword, account, timeRange, sort } = searchFilters;
-    let url = `https://weixin.sogou.com/weixin?type=2&query=${encodeURIComponent(keyword)}`;
-    if (account.trim()) url += `&usip=${encodeURIComponent(account.trim())}`;
+    
+    // 构建更标准的搜狗微信搜索 URL，确保参数生效
+    // s_from=input 是关键，告知服务器这是从搜索框发起的请求
+    let url = `https://weixin.sogou.com/weixin?type=2&s_from=input&query=${encodeURIComponent(keyword)}&ie=utf8&_sug_=n&_sug_type_=`;
+    
+    // 如果指定了公众号，使用 usip 参数
+    if (account.trim()) {
+      url += `&usip=${encodeURIComponent(account.trim())}`;
+    }
+    
+    // 时间范围 (tsn) 和 排序 (sort)
     if (timeRange !== '0') url += `&tsn=${timeRange}`;
     if (sort !== '0') url += `&sort=${sort}`;
     
-    window.open(url, '_blank');
+    // 在手机端/微信内，使用 window.location.href 切换页面通常比 window.open 更可靠
+    if (isMobile) {
+      window.location.href = url;
+    } else {
+      window.open(url, '_blank');
+    }
     closeSearchDrawer();
   };
 
