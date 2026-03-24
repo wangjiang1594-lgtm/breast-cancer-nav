@@ -332,26 +332,29 @@ export default function App() {
     document.body.style.overflow = 'auto';
   };
 
-  const executeSearch = () => {
+  const executeSearch = (engine = 'sogou') => {
     if (!searchConf) return;
     const { keyword, account, timeRange, sort } = searchFilters;
     
-    // 核心优化：移动端搜狗往往会屏蔽 URL 参数中的高级筛选 (tsn, sort, usip)，
-    // 最稳健的办法是将“公众号名称”直接并入“关键词”中进行全局搜索。
-    let finalQuery = keyword;
-    if (account.trim()) {
-      finalQuery += ` ${account.trim()}`;
+    let url = '';
+    if (engine === 'sogou') {
+      // 使用搜狗的高级搜索语法：公众号:名称 关键词
+      let query = keyword;
+      if (account.trim()) {
+        query = `公众号:${account.trim()} ${keyword}`;
+      }
+      url = `https://weixin.sogou.com/weixin?type=2&s_from=input&query=${encodeURIComponent(query)}&ie=utf8&_sug_=n&_sug_type_=`;
+      
+      // 仍然保留原由参数作为补充
+      if (account.trim()) url += `&usip=${encodeURIComponent(account.trim())}`;
+      if (timeRange !== '0') url += `&tsn=${timeRange}`;
+      if (sort !== '0') url += `&sort=${sort}`;
+    } else if (engine === 'baidu') {
+      // 百度搜索微信文章：关键词 + 公众号 + site 约束
+      const baiduQuery = `${keyword} ${account.trim()} site:mp.weixin.qq.com`;
+      url = `https://www.baidu.com/s?wd=${encodeURIComponent(baiduQuery.trim())}`;
     }
     
-    // 构建基础搜索 URL，加入必要的 s_from 参数以模拟真实搜索
-    let url = `https://weixin.sogou.com/weixin?type=2&s_from=input&query=${encodeURIComponent(finalQuery)}&ie=utf8&_sug_=n&_sug_type_=`;
-    
-    // 仍然尝试带上高级参数，以便在支持的环境（如桌面端或特定版本）中生效
-    if (account.trim()) url += `&usip=${encodeURIComponent(account.trim())}`;
-    if (timeRange !== '0') url += `&tsn=${timeRange}`;
-    if (sort !== '0') url += `&sort=${sort}`;
-    
-    // 在手机端/微信内，使用 window.location.href 切换页面通常比 window.open 更可靠
     if (isMobile) {
       window.location.href = url;
     } else {
@@ -610,13 +613,35 @@ export default function App() {
               </div>
             </div>
 
-            <div className="p-4 border-t border-slate-100 bg-white pb-8">
+            <div className="p-4 border-t border-slate-100 bg-white grid grid-cols-2 gap-3 pb-8">
               <button 
-                onClick={executeSearch}
-                className="w-full py-4 bg-emerald-600 text-white font-bold rounded-2xl shadow-lg shadow-emerald-200 active:bg-emerald-700 transition-all flex items-center justify-center gap-2"
+                onClick={() => executeSearch('sogou')}
+                className="py-4 bg-emerald-600 text-white font-bold rounded-2xl shadow-lg shadow-emerald-100 active:bg-emerald-700 transition-all flex items-center justify-center gap-2"
               >
                 <Search className="w-5 h-5" />
-                立即搜索
+                搜狗搜索
+              </button>
+              <button 
+                onClick={() => executeSearch('baidu')}
+                className="py-4 bg-blue-600 text-white font-bold rounded-2xl shadow-lg shadow-blue-100 active:bg-blue-700 transition-all flex items-center justify-center gap-2"
+              >
+                <ExternalLink className="w-5 h-5" />
+                百度搜索
+              </button>
+              <button 
+                onClick={() => {
+                  const q = searchFilters.account ? `公众号:${searchFilters.account} ${searchFilters.keyword}` : searchFilters.keyword;
+                  if (copyTextAreaRef.current) {
+                    copyTextAreaRef.current.value = q;
+                    copyTextAreaRef.current.select();
+                    document.execCommand('copy');
+                    alert('关键词已复制，请在微信搜一搜中使用');
+                  }
+                }}
+                className="col-span-2 py-3 border border-slate-200 text-slate-600 font-bold rounded-xl active:bg-slate-50 flex items-center justify-center gap-2 text-xs"
+              >
+                <Copy className="w-4 h-4" />
+                复制搜索词 (前往微信手动搜一搜)
               </button>
             </div>
           </div>
