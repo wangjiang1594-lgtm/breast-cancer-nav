@@ -29,3 +29,9 @@ dist-ssr
 firebase-debug.log*
 firestore-debug.log*
 ui-debug.log*
+
+# Local env (后端 URL 有默认值，无需提交)
+.env
+
+# 无关产物
+generated_ppt_image_deck/
